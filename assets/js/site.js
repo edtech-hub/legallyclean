@@ -68,82 +68,13 @@
     });
   }
 
-  /* Element-to-page transitions. The clicked element (a card photo, a button) gets the
-     "expand" view-transition name, and the next page gives the same name to its match
-     (see the pagereveal handler in <head>), so the browser morphs one into the other. */
-  function expandLinks() {
-    if (!("onpagereveal" in window) || reduceMotion) return;
-    document.addEventListener("click", function (e) {
-      var link = e.target.closest("a[data-vt]");
-      if (!link || e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || link.target === "_blank") return;
-      var keyed = link.getAttribute("data-vt");
-      var src = link.querySelector("[data-vt-key]") || (keyed && document.querySelector('[data-vt-key="' + keyed + '"]')) || link;
-      var key = src.getAttribute("data-vt-key") || keyed || "quote-panel";
-      var r = src.getBoundingClientRect();
-      if (r.bottom < 0 || r.top > window.innerHeight) src = link;
-      document.querySelectorAll("[style*=view-transition-name]").forEach(function (el) { el.style.viewTransitionName = ""; });
-      src.style.viewTransitionName = "expand";
-      try { sessionStorage.setItem("vt", JSON.stringify({ key: key, t: Date.now() })); } catch (x) { /* private mode */ }
-    });
-    window.addEventListener("pageshow", function (e) {
-      if (e.persisted) document.querySelectorAll("[style*=view-transition-name]").forEach(function (el) { el.style.viewTransitionName = ""; });
-    });
-  }
-
-  /* Headlines: words rise in one after another. */
-  function splitHeadings() {
-    if (reduceMotion) return;
-    document.querySelectorAll("[data-split]").forEach(function (el) {
-      var i = 0;
-      (function walk(node) {
-        Array.prototype.slice.call(node.childNodes).forEach(function (child) {
-          if (child.nodeType === 3) {
-            var frag = document.createDocumentFragment();
-            child.textContent.split(/(\s+)/).forEach(function (part) {
-              if (!part) return;
-              if (/^\s+$/.test(part)) { frag.appendChild(document.createTextNode(" ")); return; }
-              var outer = document.createElement("span");
-              outer.className = "split-word";
-              outer.setAttribute("aria-hidden", "true");
-              var inner = document.createElement("span");
-              inner.style.setProperty("--w", i++);
-              inner.textContent = part;
-              outer.appendChild(inner);
-              frag.appendChild(outer);
-            });
-            node.replaceChild(frag, child);
-          } else if (child.nodeType === 1) walk(child);
-        });
-      })(el);
-      el.setAttribute("aria-label", el.textContent.replace(/\s+/g, " ").trim());
-    });
-  }
-
-  /* Counters: 0 up to the real number, once. */
-  function countUp(el) {
-    var target = parseInt(el.getAttribute("data-count"), 10);
-    if (reduceMotion || !target) return;
-    var start = performance.now(), dur = 1150;
-    el.textContent = "0";
-    (function tick(now) {
-      var p = Math.min(1, (now - start) / dur);
-      el.textContent = String(Math.round(target * (1 - Math.pow(1 - p, 5))));
-      if (p < 1) requestAnimationFrame(tick);
-    })(start);
-  }
-
-  /* Reveal: fade-ups, image wipes, counters and the punch-list stamp fire as blocks scroll into view. */
+  /* Gentle fade-in as blocks scroll into view. */
   function reveal() {
-    var items = document.querySelectorAll(".wp-reveal, .clip-reveal");
-    if (!items.length) return;
-    var done = function (el) {
-      el.classList.add("is-revealed");
-      el.querySelectorAll("[data-count]").forEach(countUp);
-    };
+    var items = document.querySelectorAll(".wp-reveal");
     if (reduceMotion || !("IntersectionObserver" in window)) { items.forEach(function (el) { el.classList.add("is-revealed"); }); return; }
     var io = new IntersectionObserver(function (entries) {
-      entries.forEach(function (e) { if (e.isIntersecting) { done(e.target); io.unobserve(e.target); } });
-    }, { rootMargin: "0px 0px -10% 0px", threshold: 0.15 });
+      entries.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add("is-revealed"); io.unobserve(e.target); } });
+    }, { rootMargin: "0px 0px -8% 0px", threshold: 0.1 });
     items.forEach(function (el) { io.observe(el); });
   }
 
@@ -363,84 +294,7 @@
 
   /* ---------- Easter eggs ---------- */
 
-  /* Dusty glass on the cover band: wipe it, and the dust slowly settles back. */
-  function dustyGlass() {
-    var band = document.querySelector("[data-dust]");
-    if (!band || reduceMotion || !window.HTMLCanvasElement) return;
-    var canvas = document.createElement("canvas");
-    var ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    canvas.className = "dust-canvas";
-    canvas.setAttribute("aria-hidden", "true");
-    var dim = band.querySelector(".wp-block-cover__background");
-    band.insertBefore(canvas, band.querySelector(".wp-block-cover__inner-container"));
-    var hint = band.querySelector(".dust-hint");
-    if (hint) hint.hidden = false;
-    var dust = document.createElement("canvas"), dctx = dust.getContext("2d");
-    var w = 0, h = 0, dpr = 1, last = null, settling = 0, raf = 0;
-
-    function paintDust() {
-      dust.width = w; dust.height = h;
-      dctx.fillStyle = "#151515";
-      dctx.fillRect(0, 0, w, h);
-      var n = Math.round(w * h / 900);
-      for (var i = 0; i < n; i++) {
-        dctx.fillStyle = "rgba(235,225,212," + (0.05 + Math.random() * 0.16).toFixed(3) + ")";
-        dctx.beginPath();
-        dctx.arc(Math.random() * w, Math.random() * h, (0.4 + Math.random() * 1.3) * dpr, 0, 6.283);
-        dctx.fill();
-      }
-    }
-    function resize() {
-      dpr = Math.min(window.devicePixelRatio || 1, 2);
-      w = canvas.width = Math.round(band.clientWidth * dpr);
-      h = canvas.height = Math.round(band.clientHeight * dpr);
-      paintDust();
-      ctx.globalCompositeOperation = "source-over";
-      ctx.globalAlpha = 1;
-      ctx.drawImage(dust, 0, 0);
-    }
-    function wipe(x, y) {
-      var r = 64 * dpr;
-      var g = ctx.createRadialGradient(x, y, 0, x, y, r);
-      g.addColorStop(0, "rgba(0,0,0,.9)");
-      g.addColorStop(1, "rgba(0,0,0,0)");
-      ctx.globalCompositeOperation = "destination-out";
-      ctx.globalAlpha = 1;
-      ctx.fillStyle = g;
-      ctx.beginPath();
-      ctx.arc(x, y, r, 0, 6.283);
-      ctx.fill();
-    }
-    function settle() {
-      ctx.globalCompositeOperation = "source-over";
-      ctx.globalAlpha = 0.012;
-      ctx.drawImage(dust, 0, 0);
-      settling--;
-      if (settling > 0) raf = requestAnimationFrame(settle);
-      else { ctx.globalAlpha = 1; ctx.drawImage(dust, 0, 0); raf = 0; }
-    }
-    function move(e) {
-      var r = band.getBoundingClientRect();
-      var x = (e.clientX - r.left) * dpr, y = (e.clientY - r.top) * dpr;
-      if (last) {
-        var dx = x - last.x, dy = y - last.y, steps = Math.max(1, Math.ceil(Math.hypot(dx, dy) / (18 * dpr)));
-        for (var i = 1; i <= steps; i++) wipe(last.x + dx * i / steps, last.y + dy * i / steps);
-      } else wipe(x, y);
-      last = { x: x, y: y };
-      settling = 420;
-      if (!raf) raf = requestAnimationFrame(settle);
-    }
-    resize();
-    if (dim) dim.style.opacity = "0";
-    band.addEventListener("pointermove", function (e) { if (e.pointerType === "mouse" || e.buttons) move(e); });
-    band.addEventListener("pointerleave", function () { last = null; });
-    band.addEventListener("pointerup", function () { last = null; });
-    var t;
-    window.addEventListener("resize", function () { clearTimeout(t); t = setTimeout(resize, 150); });
-  }
-
-  /* Pink hard hats: type "diva", enter the Konami code, or tap the logo five times. */
+  /* Hidden Easter egg: type "diva" or the Konami code for pink hard hats (the owner is the "Pink Construction Hat Diva"). */
   var HAT = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 42" width="W" height="H" aria-hidden="true"><path d="M9 31a23 22 0 0 1 46 0z" fill="#e0157a"/><path d="M27 9.5a23 22 0 0 1 10 0V31H27z" fill="#f46aa6"/><rect x="2" y="29" width="60" height="8" rx="4" fill="#b80f60"/></svg>';
   function toast(html) {
     var el = document.createElement("div");
@@ -477,61 +331,20 @@
       keys = keys.slice(-10);
       if (keys.join(",") === konami.join(",") || keys.slice(-4).join("") === "diva") { keys = []; hatRain(); }
     });
-    var taps = 0, timer;
-    document.querySelectorAll(".site-brand img").forEach(function (logo) {
-      logo.addEventListener("click", function (e) {
-        taps++;
-        clearTimeout(timer);
-        timer = setTimeout(function () { taps = 0; }, 1200);
-        if (taps >= 5) { e.preventDefault(); taps = 0; hatRain(); }
-      });
-    });
-  }
-
-  /* Footer: "Page swept clean 3 minutes ago". Click it to sweep again. */
-  function sweptClock() {
-    var btn = document.querySelector("[data-swept]");
-    if (!btn) return;
-    var out = btn.querySelector("[data-swept-text]");
-    var since = Date.now();
-    function render() {
-      var m = Math.floor((Date.now() - since) / 60000);
-      out.textContent = m < 1 ? "just now" : m === 1 ? "a minute ago" : m + " minutes ago";
-    }
-    setInterval(render, 20000);
-    btn.addEventListener("click", function () {
-      since = Date.now();
-      render();
-      btn.classList.remove("is-sweeping");
-      void btn.offsetWidth;
-      btn.classList.add("is-sweeping");
-    });
-  }
-
-  function consoleNote() {
-    try {
-      console.log("%cLooking under the hood?%c We do final cleans on those too. Call (561) 467-4400. Psst: type \"diva\" anywhere on the page.",
-        "font:600 15px Georgia,serif;color:#c8126a", "font:13px system-ui;color:#555");
-    } catch (e) { /* no console */ }
   }
 
   document.addEventListener("DOMContentLoaded", function () {
     applyHours();
     setInterval(applyHours, 60000);
-    splitHeadings();
     stickyHeader();
     overlayMenu();
     megaMenu();
-    expandLinks();
     mobileActions();
     lightbox();
     reveal();
     document.querySelectorAll('input[type="tel"]').forEach(formatPhone);
     gforms();
-    dustyGlass();
     hatTriggers();
-    sweptClock();
-    consoleNote();
     document.querySelectorAll("[data-year]").forEach(function (el) { el.textContent = new Date().getFullYear(); });
   });
 })();
