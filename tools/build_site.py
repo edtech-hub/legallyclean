@@ -82,6 +82,8 @@ IMGS = {
 
 SVG = {
     "phone": '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>',
+    "hardhat": '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M2 18a1 1 0 0 0 1 1h18a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1v2z"/><path d="M10 10V5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v5"/><path d="M4 15v-3a6 6 0 0 1 6-6"/><path d="M14 6a6 6 0 0 1 6 6v3"/></svg>',
+    "arrow": '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>',
     # WordPress core navigation icons
     "menu": '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M5 5v1.5h14V5H5zm0 7.8h14v-1.5H5v1.5zM5 19h14v-1.5H5V19z"/></svg>',
     "close": '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="m13.06 12 6.47-6.47-1.06-1.06L12 10.94 5.53 4.47 4.47 5.53 10.94 12l-6.47 6.47 1.06 1.06L12 13.06l6.47 6.47 1.06-1.06L13.06 12Z"/></svg>',
@@ -418,6 +420,51 @@ def service_choice_cards(input_type, large=False, options=None):
     return f'<ul class="gchoice-cards{" gchoice-cards--lg" if large else ""}">{"".join(items)}</ul>'
 
 
+def steps(labels):
+    """Gravity Forms "Steps" progress indicator."""
+    items = "".join(f'<div class="gf_step{" gf_step_active" if i == 0 else ""}" role="listitem"><span class="gf_step_number">{i + 1}</span>'
+                    f'<span class="gf_step_label">{l}</span></div>' for i, l in enumerate(labels))
+    return f'<div class="gf_page_steps" role="list" aria-label="Form steps">{items}</div><p class="screen-reader-text" aria-live="polite" data-step-announce></p>'
+
+
+CONFIRM_ICON = f'<span class="gform_confirmation_icon" aria-hidden="true">{SVG["hardhat"]}</span>'
+
+
+def quote_box(root):
+    """Hero quote box: two Gravity-style steps, hard hat color swap and dust puff on submit (see site.js)."""
+    tape = "FREE QUOTE &#183; MOST PROJECTS START WITHIN 24 HOURS &#183; "
+    return f"""<div class="quote-box">
+          <div class="quote-box__head">
+            <button class="quote-box__hat" type="button" aria-label="Try a different hard hat" title="Go on, try a different hat">{SVG["hardhat"]}</button>
+            <div class="quote-box__title"><h2 class="wp-block-heading">Request a free quote</h2><p>Two quick steps. Or call <a href="tel:{TEL}">{PHONE}</a></p></div>
+            <span class="quote-box__swatch" aria-live="polite"></span>
+          </div>
+          <div class="quote-box__tape" aria-hidden="true"><span>{tape * 4}</span><span>{tape * 4}</span></div>
+          <div class="gform_wrapper">
+            {steps(["The job", "Your details"])}
+            <div class="gform_validation_errors" role="alert" hidden>There was a problem with your submission. Please review the fields below.</div>
+            <form method="post" novalidate data-autoadvance>
+              <div class="gform_page" data-title="The job">
+                <div class="gform_fields">
+                  {gfield("What do you need cleaned?", service_choice_cards("radio", large=True, options=SERVICE_OPTIONS[:4]), True, group=True)}
+                </div>
+                <div class="gform_page_footer"><button class="wp-element-button gform_next_button" type="button">Next {SVG["arrow"]}</button></div>
+              </div>
+              <div class="gform_page" data-title="Your details" hidden>
+                <div class="gform_fields">
+                  {gfield(lab("h-name", "Name"), '<input id="h-name" name="name" type="text" autocomplete="name" required>', True, "half")}
+                  {gfield(lab("h-company", "Company"), '<input id="h-company" name="company" type="text" autocomplete="organization">', False, "half")}
+                  {gfield(lab("h-phone", "Phone"), '<input id="h-phone" name="phone" type="tel" autocomplete="tel" required>', True, "half", stack=False)}
+                  {gfield(lab("h-zip", "Project ZIP code"), '<input id="h-zip" name="zip" type="text" inputmode="numeric" maxlength="5" autocomplete="postal-code" required><p class="zip-hint" aria-live="polite"></p>', True, "half", stack=False)}
+                </div>
+                <div class="gform_page_footer"><button class="wp-element-button gform_previous_button" type="button">Back</button><button class="wp-element-button" type="submit">Get my free quote</button></div>
+              </div>
+            </form>
+            <div class="gform_confirmation_wrapper" hidden><div class="gform_confirmation_message" role="status">{CONFIRM_ICON}<h3 class="wp-block-heading">Thanks<span data-first-name></span>! We got your request.</h3><p>We'll call you back at <strong data-echo="phone"></strong> during business hours. Need us sooner? Call <a href="tel:{TEL}">{PHONE}</a>.</p></div></div>
+          </div>
+        </div>"""
+
+
 def radios(name, values, input_type="radio"):
     kind = "checkbox" if input_type == "checkbox" else "radio"
     return (f'<ul class="gfield_{kind} inline">' + "".join(
@@ -632,24 +679,7 @@ def home(root):
         <p class="hero-meta">Woman-owned and MWBE certified. Licensed, insured and bonded. Most projects start within 24 hours.</p>
       </div>
       <div class="wp-block-column hero-form-col">
-        <div class="quote-box">
-          <h2 class="wp-block-heading">Request a free quote</h2>
-          <p class="quote-box__sub">We'll get back to you {HOURS_TEXT}.</p>
-          <div class="gform_wrapper">
-            <div class="gform_validation_errors" role="alert" hidden>There was a problem with your submission. Please review the fields below.</div>
-            <form method="post" novalidate>
-              <div class="gform_fields">
-                {gfield(lab("h-name", "Name"), '<input id="h-name" name="name" type="text" autocomplete="name" required>', True, "half")}
-                {gfield(lab("h-company", "Company"), '<input id="h-company" name="company" type="text" autocomplete="organization">', False, "half")}
-                {gfield(lab("h-phone", "Phone"), '<input id="h-phone" name="phone" type="tel" autocomplete="tel" required>', True, "half", stack=False)}
-                {gfield(lab("h-zip", "Project ZIP code"), '<input id="h-zip" name="zip" type="text" inputmode="numeric" maxlength="5" autocomplete="postal-code" required>', True, "half", stack=False)}
-                {gfield("Service", service_choice_cards("radio", options=SERVICE_OPTIONS[:4]), True, group=True)}
-              </div>
-              <div class="gform_footer"><button class="wp-element-button" type="submit">Request my quote</button></div>
-            </form>
-            <div class="gform_confirmation_wrapper" hidden><div class="gform_confirmation_message" role="status"><h3 class="wp-block-heading">Thanks<span data-first-name></span>! We got your request.</h3><p>We'll be in touch during business hours. Need us sooner? Call <a href="tel:{TEL}">{PHONE}</a>.</p></div></div>
-          </div>
-        </div>
+        {quote_box(root)}
       </div>
     </div>
   </div>

@@ -204,7 +204,7 @@
         (banner || form).scrollIntoView({ block: "center", behavior: reduceMotion ? "auto" : "smooth" });
         if (bad) setTimeout(function () { bad.focus({ preventScroll: true }); }, 300);
       }
-      function showPage(i) {
+      function showPage(i, moveFocus) {
         current = i;
         pages.forEach(function (p, idx) { p.hidden = idx !== i; });
         var pct = Math.round((i + 1) / pages.length * 100);
@@ -212,6 +212,22 @@
         if (bar) { bar.style.width = pct + "%"; bar.querySelector("span").textContent = pct + "%"; }
         var title = wrapper.querySelector(".gf_progressbar_title");
         if (title) title.textContent = "Step " + (i + 1) + " of " + pages.length + " - " + pages[i].getAttribute("data-title");
+        // Gravity Forms "Steps" indicator
+        wrapper.querySelectorAll(".gf_step").forEach(function (step, idx) {
+          step.classList.toggle("gf_step_active", idx === i);
+          step.classList.toggle("gf_step_completed", idx < i);
+        });
+        var say = wrapper.querySelector("[data-step-announce]");
+        if (say && moveFocus) say.textContent = "Step " + (i + 1) + " of " + pages.length + ": " + pages[i].getAttribute("data-title");
+        if (moveFocus) {
+          if (wrapper.getBoundingClientRect().top < 0) wrapper.scrollIntoView({ block: "start" });
+          var firstField = pages[i].querySelector("input:not([type=radio]):not([type=checkbox]), textarea, input:checked, input");
+          if (firstField) firstField.focus({ preventScroll: true });
+        }
+      }
+      function goNext() {
+        if (validateScope(pages[current])) { if (banner) banner.hidden = true; showPage(current + 1, true); }
+        else fail(pages[current]);
       }
 
       // "Which phases?" only applies to post-construction work.
@@ -244,12 +260,22 @@
         form.addEventListener("click", function (e) {
           var next = e.target.closest(".gform_next_button");
           var prev = e.target.closest(".gform_previous_button");
-          if (next) {
-            if (validateScope(pages[current])) { if (banner) banner.hidden = true; showPage(current + 1); wrapper.scrollIntoView({ block: "start" }); }
-            else fail(pages[current]);
-          }
-          if (prev) { if (banner) banner.hidden = true; showPage(current - 1); }
+          if (next) goNext();
+          if (prev) { if (banner) banner.hidden = true; showPage(current - 1, true); }
         });
+        // One-tap step: picking a card with a mouse or finger moves on (keyboard users press Next).
+        var advanceTimer;
+        if (form.hasAttribute("data-autoadvance")) {
+          form.addEventListener("click", function (e) {
+            var card = e.target.closest(".gcard");
+            if (!card || e.detail === 0 || current === pages.length - 1) return;
+            var input = card.querySelector('input[type="radio"]');
+            if (!input || !pages[current].contains(input)) return;
+            var from = current;
+            clearTimeout(advanceTimer);
+            advanceTimer = setTimeout(function () { if (input.checked && current === from) goNext(); }, 280);
+          });
+        }
         showPage(0);
       }
 
@@ -264,13 +290,19 @@
         // Prototype: nothing is sent. To go live, post new FormData(form) to the form service here.
         var first = (form.querySelector('[name="name"]') || {}).value || "";
         var done = wrapper.querySelector(".gform_confirmation_wrapper");
+        done.querySelectorAll("[data-echo]").forEach(function (el) {
+          var field = form.querySelector('[name="' + el.getAttribute("data-echo") + '"]');
+          el.textContent = field ? field.value.trim() : "";
+        });
         var nameSlot = done.querySelector("[data-first-name]");
         if (nameSlot) nameSlot.textContent = first.trim().split(" ")[0] ? ", " + first.trim().split(" ")[0] : "";
         form.hidden = true;
         if (banner) banner.hidden = true;
         var bar = wrapper.querySelector(".gf_progressbar_wrapper");
         if (bar) bar.hidden = true;
+        wrapper.querySelectorAll(".gf_page_steps").forEach(function (el) { el.hidden = true; });
         done.hidden = false;
+        dustPuff(wrapper.closest(".quote-box"));
         done.scrollIntoView({ block: "center", behavior: reduceMotion ? "auto" : "smooth" });
       });
     });
@@ -293,6 +325,67 @@
   }
 
   /* ---------- Easter eggs ---------- */
+
+  /* Hero quote box: try on a different hard hat (each one recolors the box) and a dust puff on submit. */
+  var HATS = [["Diva Pink", "#d4166d", "#8f0c46", "#fff"], ["Hi-Vis Yellow", "#f7cf3a", "#e0a800", "#1b1b1b"], ["Safety Orange", "#ff7a2f", "#c9461a", "#fff"],
+    ["Concrete Gray", "#7d838b", "#40454b", "#fff"], ["Steel Blue", "#3a78c2", "#1d4a80", "#fff"], ["Site Green", "#5f9a2c", "#2f5e17", "#fff"]];
+  var hatIndex = 0;
+  function wearHat(i, announce) {
+    var box = document.querySelector(".quote-box");
+    if (!box) return;
+    hatIndex = i;
+    var h = HATS[i];
+    box.style.setProperty("--qb-a", h[1]);
+    box.style.setProperty("--qb-b", h[2]);
+    box.style.setProperty("--qb-ink", h[3]);
+    var btn = box.querySelector(".quote-box__hat"), tag = box.querySelector(".quote-box__swatch");
+    if (btn) { btn.classList.remove("is-swapping"); void btn.offsetWidth; btn.classList.add("is-swapping"); }
+    if (tag && announce) {
+      tag.textContent = h[0];
+      tag.classList.add("is-shown");
+      clearTimeout(wearHat.t);
+      wearHat.t = setTimeout(function () { tag.classList.remove("is-shown"); }, 1500);
+    }
+  }
+  function hardHats() {
+    var btn = document.querySelector(".quote-box__hat");
+    if (btn) btn.addEventListener("click", function () { wearHat((hatIndex + 1) % HATS.length, true); });
+  }
+  function dustPuff(box) {
+    if (!box || reduceMotion) return;
+    var colors = ["#d8d2c6", "#c4bcae", "#ebe6dc", "#b3ab9c"];
+    for (var n = 0; n < 18; n++) {
+      var el = document.createElement("span");
+      el.className = "qb-dust";
+      el.setAttribute("aria-hidden", "true");
+      var a = Math.random() * Math.PI * 2, d = 70 + Math.random() * 130, sz = 10 + Math.random() * 26;
+      el.style.left = "calc(50% - " + sz / 2 + "px)";
+      el.style.top = "45%";
+      el.style.width = sz + "px";
+      el.style.height = sz + "px";
+      el.style.background = colors[n % colors.length];
+      el.style.setProperty("--dx", Math.cos(a) * d + "px");
+      el.style.setProperty("--dy", Math.sin(a) * d * .7 + "px");
+      el.style.animationDelay = Math.random() * 120 + "ms";
+      box.appendChild(el);
+      setTimeout(function (x) { return function () { x.remove(); }; }(el), 1500);
+    }
+  }
+  /* ZIP hint: Broward, Miami-Dade and Palm Beach ZIP codes start 330 to 334. */
+  function zipHint() {
+    document.querySelectorAll(".zip-hint").forEach(function (hint) {
+      var input = hint.closest(".ginput_container").querySelector('input[name="zip"]');
+      input.addEventListener("input", function () {
+        var v = input.value.replace(/\D/g, "");
+        hint.className = "zip-hint";
+        hint.textContent = "";
+        if (v.length < 5) return;
+        var inArea = /^33[0-4]/.test(v);
+        hint.classList.add(inArea ? "is-in" : "is-out");
+        hint.textContent = inArea ? "Inside our service area." : "Outside our usual area. Send it anyway and we'll let you know.";
+      });
+    });
+  }
 
   /* Hidden Easter egg: type "diva" or the Konami code for pink hard hats (the owner is the "Pink Construction Hat Diva"). */
   var HAT = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 42" width="W" height="H" aria-hidden="true"><path d="M9 31a23 22 0 0 1 46 0z" fill="#e0157a"/><path d="M27 9.5a23 22 0 0 1 10 0V31H27z" fill="#f46aa6"/><rect x="2" y="29" width="60" height="8" rx="4" fill="#b80f60"/></svg>';
@@ -329,7 +422,7 @@
       if (e.target.closest && e.target.closest("input, textarea, select, [contenteditable]")) return;
       keys.push(e.key.length === 1 ? e.key.toLowerCase() : e.key);
       keys = keys.slice(-10);
-      if (keys.join(",") === konami.join(",") || keys.slice(-4).join("") === "diva") { keys = []; hatRain(); }
+      if (keys.join(",") === konami.join(",") || keys.slice(-4).join("") === "diva") { keys = []; hatRain(); wearHat(0, true); }
     });
   }
 
@@ -345,6 +438,8 @@
     document.querySelectorAll('input[type="tel"]').forEach(formatPhone);
     gforms();
     hatTriggers();
+    hardHats();
+    zipHint();
     document.querySelectorAll("[data-year]").forEach(function (el) { el.textContent = new Date().getFullYear(); });
   });
 })();

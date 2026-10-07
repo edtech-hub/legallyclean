@@ -454,3 +454,90 @@ p { text-wrap: pretty; }
 article.wp-block-post > * + * { margin-top: 0; }
 article.wp-block-post .single-body { padding-top: 0; }
 article.wp-block-post > section + section { background: var(--wp--preset--color--base) !important; }
+
+/* ===== Hero quote box (same structure as the James Skipper build), in job-site colors =====
+   --qb-a / --qb-b: hard hat color pair, --qb-ink: header text on that color. The hard hat button swaps them. */
+.quote-box { --qb-a: #d4166d; --qb-b: #8f0c46; --qb-ink: #fff; position: relative; padding: 0; overflow: visible; border: 1px solid rgb(255 255 255 / .35); border-radius: 8px; background: linear-gradient(180deg, #f5f3ee 0%, #ffffff 42%); box-shadow: 0 28px 70px rgb(0 0 0 / .45), 0 0 0 6px rgb(255 255 255 / .06); }
+.quote-box__head { position: relative; display: flex; align-items: center; gap: 14px; padding: 16px 20px; border-radius: 8px 8px 0 0; background: linear-gradient(90deg, var(--qb-a), var(--qb-b)); color: var(--qb-ink); transition: background .5s ease, color .3s ease; }
+.quote-box__head h2 { font-size: 1.45rem; color: inherit; }
+.quote-box__head p { margin-top: 2px; font-size: .84rem; opacity: .85; }
+.quote-box__head a { color: inherit; font-weight: 600; white-space: nowrap; }
+.quote-box__title { min-width: 0; }
+.quote-box__hat { display: grid; flex: none; place-items: center; width: 44px; height: 44px; padding: 0; border: 1px solid color-mix(in srgb, var(--qb-ink) 35%, transparent); border-radius: 10px; background: color-mix(in srgb, var(--qb-ink) 14%, transparent); color: var(--qb-ink); cursor: pointer; transition: transform .2s ease, background-color .2s ease; }
+.quote-box__hat svg { width: 24px; height: 24px; }
+.quote-box__hat:hover { transform: rotate(-8deg); background: color-mix(in srgb, var(--qb-ink) 24%, transparent); }
+.quote-box__hat.is-swapping svg { animation: qb-hat .55s cubic-bezier(.34, 1.56, .64, 1); }
+@keyframes qb-hat { 0% { transform: none; } 35% { transform: translateY(-7px) rotate(-14deg); } 100% { transform: none; } }
+.quote-box__swatch { position: absolute; top: 8px; right: 10px; padding: 3px 10px; border-radius: 999px; background: rgb(255 255 255 / .94); color: #1b1b1b; font-size: .7rem; font-weight: 600; letter-spacing: .02em; opacity: 0; transform: translateY(-4px); transition: opacity .25s ease, transform .25s ease; pointer-events: none; }
+.quote-box__swatch.is-shown { opacity: 1; transform: none; }
+.quote-box__swatch::before { content: ""; display: inline-block; width: 8px; height: 8px; margin-right: 6px; border-radius: 50%; background: var(--qb-a); vertical-align: 0; }
+
+/* Caution tape under the header, with the offer running along it */
+.quote-box__tape { display: flex; overflow: hidden; height: 24px; background: repeating-linear-gradient(-45deg, #f4c21b 0 14px, #1b1b1b 14px 28px); box-shadow: inset 0 1px 0 rgb(0 0 0 / .2), inset 0 -1px 0 rgb(0 0 0 / .2); }
+.quote-box__tape span { flex: none; display: block; padding: 0 0 0 12px; background: #f4c21b; color: #1b1b1b; font-size: .66rem; font-weight: 600; letter-spacing: .14em; line-height: 24px; white-space: nowrap; margin: 4px 0; line-height: 16px; animation: qb-tape 26s linear infinite; }
+@keyframes qb-tape { to { transform: translateX(-100%); } }
+
+.quote-box .gform_wrapper { position: relative; padding: 18px 20px 20px; }
+.quote-box .gform_fields { gap: 12px; }
+
+/* Gravity Forms "Steps" indicator */
+.gf_page_steps { display: flex; align-items: center; gap: 10px; margin: 0 0 16px; padding-bottom: 14px; border-bottom: 1px solid #ebe8e2; }
+.gf_step { display: flex; align-items: center; gap: 8px; color: var(--wp--preset--color--contrast-2); font-size: .84rem; font-weight: 600; white-space: nowrap; }
+.gf_step:not(:last-child) { flex: 1; }
+.gf_step:not(:last-child)::after { content: ""; flex: 1; min-width: 16px; height: 2px; border-radius: 2px; background: #e3e0d9; transition: background-color .25s ease; }
+.gf_step_number { display: grid; flex: none; place-items: center; width: 26px; height: 26px; border: 1.5px solid #c9c6bf; border-radius: 50%; background: #fff; font-size: .76rem; font-weight: 600; transition: background-color .2s ease, border-color .2s ease, color .2s ease; }
+.gf_step_active { color: var(--wp--preset--color--contrast); }
+.quote-box .gf_step_active .gf_step_number { border-color: transparent; background: linear-gradient(135deg, var(--qb-a), var(--qb-b)); color: var(--qb-ink); box-shadow: 0 0 0 4px color-mix(in srgb, var(--qb-a) 18%, transparent); }
+.quote-box .gf_step_completed .gf_step_number { border-color: var(--qb-a); background: #fff; color: var(--qb-b); }
+.quote-box .gf_step_completed:not(:last-child)::after { background: var(--qb-a); }
+
+/* Service cards with construction-color tiles: hi-vis yellow, safety orange, concrete, diva pink */
+.quote-box .gchoice-cards--lg { gap: 8px; }
+.quote-box .gchoice-cards--lg .gcard__box { position: relative; overflow: hidden; align-items: center; min-height: 66px; padding: 10px 12px 10px 10px; border-color: #e0ddd6; background: rgb(255 255 255 / .92); font-size: .92rem; }
+.quote-box .gcard__box > * { position: relative; }
+.quote-box .gcard__box::before { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, color-mix(in srgb, var(--qb-a) 14%, transparent), transparent); transform: scaleX(0); transform-origin: left; transition: transform .45s cubic-bezier(.2, .7, .2, 1); }
+.quote-box .gcard input:checked + .gcard__box { border-color: var(--qb-a); box-shadow: inset 0 0 0 1px var(--qb-a); }
+.quote-box .gcard input:checked + .gcard__box::before { transform: scaleX(1); }
+.quote-box .gchoice-cards--lg .gcard__icon { width: 36px; height: 36px; border-radius: 8px; color: #fff; }
+.quote-box .gchoice-cards li:nth-child(1) .gcard__icon { background: linear-gradient(135deg, #f7cf3a, #e0a800); color: #1b1b1b; }
+.quote-box .gchoice-cards li:nth-child(2) .gcard__icon { background: linear-gradient(135deg, #ff8a3d, #d9531a); }
+.quote-box .gchoice-cards li:nth-child(3) .gcard__icon { background: linear-gradient(135deg, #8c9198, #555a61); }
+.quote-box .gchoice-cards li:nth-child(4) .gcard__icon { background: linear-gradient(135deg, #e5428a, #a8104f); }
+.quote-box .gcard input:checked + .gcard__box .gcard__icon { box-shadow: 0 4px 10px rgb(0 0 0 / .18); }
+.quote-box .gcard__desc { font-size: .76rem; }
+.quote-box .gcard__tick { display: grid; }
+.quote-box .gcard input:checked + .gcard__box .gcard__tick { border-color: transparent; background: linear-gradient(135deg, var(--qb-a), var(--qb-b)); color: var(--qb-ink); }
+
+/* Step buttons */
+.quote-box .gform_page_footer { display: flex; gap: 10px; margin-top: 16px; padding-top: 0; border-top: 0; }
+.quote-box .gform_next_button, .quote-box .gform_page_footer button[type="submit"] { flex: 1; position: relative; overflow: hidden; border-color: transparent; background: linear-gradient(135deg, var(--qb-a), var(--qb-b)); color: var(--qb-ink); box-shadow: 0 8px 20px color-mix(in srgb, var(--qb-b) 30%, transparent); }
+.quote-box .gform_next_button::after, .quote-box .gform_page_footer button[type="submit"]::after { content: ""; position: absolute; top: 0; bottom: 0; left: -40%; width: 30%; background: linear-gradient(90deg, transparent, rgb(255 255 255 / .35), transparent); transform: skewX(-20deg); transition: left .6s ease; }
+.quote-box .gform_next_button:hover::after, .quote-box .gform_page_footer button[type="submit"]:hover::after { left: 120%; }
+.quote-box .gform_previous_button.wp-element-button { flex: none; padding-right: .9rem; padding-left: .9rem; border-color: transparent; color: var(--wp--preset--color--contrast-2); }
+
+/* ZIP hint: inside or outside the three counties */
+.zip-hint { min-height: 0; margin-top: 5px; font-size: .76rem; font-weight: 500; }
+.zip-hint.is-in { color: #23803f; }
+.zip-hint.is-out { color: #a5600b; }
+
+/* Confirmation, with a dust puff when it appears */
+.quote-box .gform_confirmation_message { border-color: color-mix(in srgb, var(--qb-a) 25%, transparent); background: linear-gradient(180deg, color-mix(in srgb, var(--qb-a) 7%, #fff), #fff); }
+.gform_confirmation_icon { display: grid; place-items: center; width: 50px; height: 50px; margin: 0 auto 12px; border-radius: 50%; background: linear-gradient(135deg, var(--qb-a, #c3135f), var(--qb-b, #8f0c46)); color: var(--qb-ink, #fff); animation: qb-pop .4s cubic-bezier(.34, 1.56, .64, 1); }
+.gform_confirmation_icon svg { width: 26px; height: 26px; }
+@keyframes qb-pop { from { transform: scale(.4); } to { transform: none; } }
+.qb-dust { position: absolute; z-index: 5; border-radius: 50%; pointer-events: none; animation: qb-dust 1.2s cubic-bezier(.2, .7, .2, 1) forwards; }
+@keyframes qb-dust { 0% { opacity: 0; transform: translate(0, 0) scale(.3); } 20% { opacity: .9; } 100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(1.6); } }
+
+@media (max-width: 479px) {
+  .quote-box .gchoice-cards--lg .gcard__box { flex-direction: row; min-height: 58px; padding: 8px; font-size: .84rem; }
+  .quote-box .gcard__desc, .quote-box .gcard__tick { display: none; }
+  .quote-box .gchoice-cards--lg .gcard__icon { width: 30px; height: 30px; }
+  .gf_step:not(.gf_step_active) .gf_step_label { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .quote-box__tape span, .quote-box__hat.is-swapping svg, .qb-dust, .gform_confirmation_icon { animation: none; }
+  .quote-box .gcard__box::before { transition: none; }
+}
+.wp-element-button svg { width: 1em; height: 1em; flex: none; }
+.quote-box .gcard__desc, .quote-box .gcard__tick { display: none !important; }
+.quote-box .gchoice-cards--lg .gcard__box { min-height: 56px; padding: 9px 10px; font-size: .9rem; line-height: 1.2; }
