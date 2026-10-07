@@ -1,0 +1,18 @@
+{ "src": "assets-src", "out": "assets/img",
+  "photos": {
+    "hero": ["AdobeStock_274926681.jpg", [800, 1280, 1920]],
+    "post-construction": ["Legally_Clean_WS_Pic_2.jpg", [640, 1000, 1179]],
+    "janitorial": ["AdobeStock_545916102.jpeg", [640, 1000, 1400]],
+    "deep-clean": ["AdobeStock_407413805.jpg", [640, 1000, 1400]],
+    "floors-windows": ["Legally_Clean_WS_Pic_9.png", [520]],
+    "band": ["AdobeStock_308563529.jpg", [640, 1000, 1400]],
+    "job-cabinets": ["Legally_Clean_WS_Pic_1.jpg", [640, 1000, 1179]],
+    "job-hallway": ["Legally_Clean_WS_Pic_8.jpg", [640, 1000, 1280]],
+    "job-atrium": ["Legally_Clean_WS_Pic_10.jpg", [450]],
+    "broward-health-er": ["BH_ER.png", [640, 1000, 1472]],
+    "sherry": ["Sherry_Headshot_1.jpg", [525]],
+    "floor-machine": ["AdobeStock_303823505.jpg", [640, 1000, 1400]]
+  },
+  "logo": "logo.jpg",
+  "og": { "photo": "AdobeStock_274926681.jpg", "title": "Post-construction & commercial cleaning", "subtitle": "Broward, Miami-Dade and Palm Beach", "phone": "561-467-4400", "accent": "#f25a9c" }
+}
